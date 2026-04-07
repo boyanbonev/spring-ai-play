@@ -1,9 +1,3 @@
 /target/
 frontend/node/
 frontend/node_modules/
-
-# IDEs
-.history/
-.vscode/
-.idea/
-.cursor/

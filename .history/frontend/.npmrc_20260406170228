@@ -1,5 +1,0 @@
-registry=https://packages.vcfd.broadcom.net/artifactory/npm/
-fetch-timeout=120000
-fetch-retries=3
-fund=false
-audit=false
