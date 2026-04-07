@@ -1,0 +1,6 @@
+registry=https://artifactory.vcfd.broadcom.net/npm/repository/npm/
+https://artifactory.vcfd.broadcom.net/artifactory/npm-remote-cached-local
+fetch-timeout=120000
+fetch-retries=3
+fund=false
+audit=false

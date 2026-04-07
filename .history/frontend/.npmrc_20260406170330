@@ -1,0 +1,6 @@
+registry=https://packages.vcfd.broadcom.net/gateway-reg-npm-vr-cache/
+/vite/-/vite-8.0.4.tgz
+fetch-timeout=120000
+fetch-retries=3
+fund=false
+audit=false

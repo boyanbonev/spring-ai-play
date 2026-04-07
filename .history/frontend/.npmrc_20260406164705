@@ -1,0 +1,5 @@
+registry=https://artifactory.vcfd.broadcom.net/npm/repository/npm/
+fetch-timeout=120000
+fetch-retries=3
+fund=false
+audit=false
