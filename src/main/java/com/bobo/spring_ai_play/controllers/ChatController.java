@@ -1,11 +1,10 @@
-package com.bobo.spring_ai_play.controller;
+package com.bobo.spring_ai_play.controllers;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.vertexai.gemini.VertexAiGeminiChatOptions;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,15 +14,19 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import com.bobo.spring_ai_play.ChatProperties;
 import com.bobo.spring_ai_play.ChatRequest;
+import com.bobo.spring_ai_play.services.ChatClientFactory;
 
+/**
+ * Streams chat completions as {@code text/plain}. Model routing and options are handled by {@link ChatClientFactory}.
+ */
 @RestController
 public class ChatController {
 
-    private final ChatClient chatClient;
+    private final ChatClientFactory chatClientFactory;
     private final ChatProperties chatProperties;
 
-    public ChatController(ChatClient.Builder chatClientBuilder, ChatProperties chatProperties) {
-        this.chatClient = chatClientBuilder.build();
+    public ChatController(ChatClientFactory chatClientFactory, ChatProperties chatProperties) {
+        this.chatClientFactory = chatClientFactory;
         this.chatProperties = chatProperties;
     }
 
@@ -36,17 +39,15 @@ public class ChatController {
         String model = request.model();
         if (model != null && !model.isBlank()) {
             String m = model.trim();
-            if (!chatProperties.allowedModelsList().contains(m)) {
+            if (!chatProperties.allAllowedModelsList().contains(m)) {
                 return ResponseEntity.badRequest().build();
             }
         }
 
+        ChatClient chatClient = chatClientFactory.buildChatClient(model);
+
         StreamingResponseBody body = outputStream -> {
-            var spec = chatClient.prompt(prompt);
-            if (model != null && !model.isBlank()) {
-                spec = spec.options(VertexAiGeminiChatOptions.builder().model(model.trim()).build());
-            }
-            spec.stream().content().toStream().forEach(chunk -> {
+            chatClient.prompt(prompt).stream().content().toStream().forEach(chunk -> {
                 try {
                     outputStream.write(chunk.getBytes(StandardCharsets.UTF_8));
                     outputStream.flush();

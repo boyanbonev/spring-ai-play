@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 
+/** Matches backend {@code ModelInfo} records from {@code GET /api/models} ({@code id} + {@code label}). */
+interface ModelOption {
+  id: string;
+  label: string;
+}
+
 function formatElapsed(ms: number): string {
   if (ms < 0) {
     ms = 0;
@@ -11,9 +17,10 @@ function formatElapsed(ms: number): string {
 }
 
 export default function App() {
-  const [models, setModels] = useState<string[]>([]);
+  const [models, setModels] = useState<ModelOption[]>([]);
   const [modelsError, setModelsError] = useState<string | null>(null);
-  const [model, setModel] = useState<string>("");
+  /** Selected model {@code id} (raw tag), sent in {@code POST /chat}; not the display {@code label}. */
+  const [modelId, setModelId] = useState("");
   const [prompt, setPrompt] = useState("");
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +56,7 @@ export default function App() {
         if (!res.ok) {
           throw new Error(`Failed to load models (${res.status})`);
         }
-        return res.json() as Promise<string[]>;
+        return res.json() as Promise<ModelOption[]>;
       })
       .then((list) => {
         if (cancelled) {
@@ -58,7 +65,9 @@ export default function App() {
         setModels(list);
         setModelsError(null);
         if (list.length > 0) {
-          setModel((m) => (m && list.includes(m) ? m : list[0]));
+          setModelId((prev) =>
+            prev && list.some((m) => m.id === prev) ? prev : list[0].id,
+          );
         }
       })
       .catch((e: unknown) => {
@@ -93,8 +102,8 @@ export default function App() {
     rafRef.current = requestAnimationFrame(tickElapsed);
 
     const body: { prompt: string; model?: string } = { prompt: text };
-    if (model) {
-      body.model = model;
+    if (modelId) {
+      body.model = modelId;
     }
 
     try {
@@ -148,16 +157,16 @@ export default function App() {
           </p>
         )}
         <select
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
+          value={modelId}
+          onChange={(e) => setModelId(e.target.value)}
           disabled={busy || models.length === 0}
         >
           {models.length === 0 ? (
             <option value="">No models</option>
           ) : (
             models.map((m) => (
-              <option key={m} value={m}>
-                {m}
+              <option key={m.id} value={m.id}>
+                {m.label}
               </option>
             ))
           )}

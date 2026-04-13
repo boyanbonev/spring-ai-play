@@ -17,10 +17,14 @@ function formatElapsed(ms) {
   return `${sec} s ${msec} ms`;
 }
 
+/**
+ * Static build served from the JAR (no Vite). Backend returns {@code { id, label }} per model; Ollama rows use a
+ * {@code (local) } prefix in {@code label} only — we still POST the raw {@code id}.
+ */
 function App() {
   const [models, setModels] = useState([]);
   const [modelsError, setModelsError] = useState(null);
-  const [model, setModel] = useState("");
+  const [modelId, setModelId] = useState("");
   const [prompt, setPrompt] = useState("");
   const [output, setOutput] = useState("");
   const [error, setError] = useState(null);
@@ -65,7 +69,9 @@ function App() {
         setModels(list);
         setModelsError(null);
         if (list.length > 0) {
-          setModel((m) => (m && list.includes(m) ? m : list[0]));
+          setModelId((prev) =>
+            prev && list.some((m) => m.id === prev) ? prev : list[0].id,
+          );
         }
       })
       .catch((e) => {
@@ -100,8 +106,8 @@ function App() {
     rafRef.current = requestAnimationFrame(tickElapsed);
 
     const body = { prompt: text };
-    if (model) {
-      body.model = model;
+    if (modelId) {
+      body.model = modelId;
     }
 
     try {
@@ -156,14 +162,14 @@ function App() {
       h(
         "select",
         {
-          value: model,
-          onChange: (e) => setModel(e.target.value),
+          value: modelId,
+          onChange: (e) => setModelId(e.target.value),
           disabled: busy || models.length === 0,
         },
         models.length === 0
           ? h("option", { value: "" }, "No models")
           : models.map((m) =>
-              h("option", { key: m, value: m }, m),
+              h("option", { key: m.id, value: m.id }, m.label),
             ),
       ),
     ),
