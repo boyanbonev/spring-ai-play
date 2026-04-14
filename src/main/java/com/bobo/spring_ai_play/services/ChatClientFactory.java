@@ -1,6 +1,8 @@
 package com.bobo.spring_ai_play.services;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
@@ -26,12 +28,15 @@ public class ChatClientFactory {
 
     private final ApplicationContext applicationContext;
     private final ChatProperties chatProperties;
+    private final ChatMemory chatMemory;
 
     public ChatClientFactory(
         ApplicationContext applicationContext,
-        ChatProperties chatProperties) {
+        ChatProperties chatProperties,
+        ChatMemory chatMemory) {
         this.applicationContext = applicationContext;
         this.chatProperties = chatProperties;
+        this.chatMemory = chatMemory;
     }
 
     /**
@@ -39,27 +44,27 @@ public class ChatClientFactory {
      *                  {@code spring.ai.vertex.ai.gemini.chat.options.*}
      */
     public ChatClient buildChatClient(String modelName) {
+        ChatClient.Builder builder = null;
+        modelName = modelName.trim();
         if (modelName == null || modelName.isBlank()) {
             VertexAiGeminiChatModel chatModel = this.applicationContext.getBean(VertexAiGeminiChatModel.class);
-            return ChatClient.builder(chatModel).build();
-        }
-        String modelId = modelName.trim();
-        if (chatProperties.isOllamaModel(modelId)) {
+            builder = ChatClient.builder(chatModel);
+        } else if (chatProperties.isOllamaModel(modelName)) {
             OllamaChatModel chatModel = this.applicationContext.getBean(OllamaChatModel.class);
-            return ChatClient.builder(chatModel)
-                    .defaultOptions(ollamaOptionsWithModel(modelId, chatModel))
-                    .build();
-        }
-        if (chatProperties.isVertexModel(modelId)) {
+            builder = ChatClient.builder(chatModel)
+                    .defaultOptions(ollamaOptionsWithModel(modelName, chatModel));
+        } else if (chatProperties.isVertexModel(modelName)) {
             VertexAiGeminiChatModel chatModel = this.applicationContext.getBean(VertexAiGeminiChatModel.class);
-            return ChatClient.builder(chatModel)
-                    .defaultOptions(vertexOptionsWithModel(modelId, chatModel))
-                    .build();
+            builder = ChatClient.builder(chatModel)
+                    .defaultOptions(vertexOptionsWithModel(modelName, chatModel));
+        } else {
+            throw new IllegalArgumentException("Model is not in Vertex or Ollama allowlists: " + modelName);
         }
-        throw new IllegalArgumentException("Model is not in Vertex or Ollama allowlists: " + modelId);
+
+        return builder.defaultAdvisors(MessageChatMemoryAdvisor.builder(chatMemory).build()).build();
     }
 
-    private OllamaChatOptions ollamaOptionsWithModel(String modelId, OllamaChatModel chatModel) {
+    private OllamaChatOptions ollamaOptionsWithModel(String modelName, OllamaChatModel chatModel) {
         ChatOptions chatOptions = chatModel.getDefaultOptions();
         OllamaChatOptions opts;
         if (chatOptions instanceof OllamaChatOptions o) {
@@ -67,11 +72,11 @@ public class ChatClientFactory {
         } else {
             opts = new OllamaChatOptions();
         }
-        opts.setModel(modelId);
+        opts.setModel(modelName);
         return opts;
     }
 
-    private VertexAiGeminiChatOptions vertexOptionsWithModel(String modelId, VertexAiGeminiChatModel chatModel) {
+    private VertexAiGeminiChatOptions vertexOptionsWithModel(String modelName, VertexAiGeminiChatModel chatModel) {
         ChatOptions chatOptions = chatModel.getDefaultOptions();
         VertexAiGeminiChatOptions opts;
         if (chatOptions instanceof VertexAiGeminiChatOptions v) {
@@ -79,7 +84,7 @@ public class ChatClientFactory {
         } else {
             opts = new VertexAiGeminiChatOptions();
         }
-        opts.setModel(modelId);
+        opts.setModel(modelName);
         return opts;
     }
 }

@@ -21,7 +21,7 @@ public class ChatProperties {
     /**
      * Shown before Ollama model names in the UI ({@code /api/models} {@code label} field). Must match frontend copy.
      */
-    public static final String OLLAMA_MODEL_LABEL_PREFIX = "(local) ";
+    public static final String OLLAMA_MODEL_LABEL_PREFIX = "(ollama local) ";
 
     /**
      * Comma-separated Vertex (Gemini) model IDs clients may select.
@@ -37,7 +37,7 @@ public class ChatProperties {
     public String getAllowedModels() {
         return allowedModels;
     }
-    
+
     public void setAllowedModels(String allowedModels) {
         this.allowedModels = allowedModels;
     }

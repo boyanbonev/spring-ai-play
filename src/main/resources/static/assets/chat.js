@@ -19,7 +19,7 @@ function formatElapsed(ms) {
 
 /**
  * Static build served from the JAR (no Vite). Backend returns {@code { id, label }} per model; Ollama rows use a
- * {@code (local) } prefix in {@code label} only — we still POST the raw {@code id}.
+ * {@code (ollama local) } prefix in {@code label} only — we still POST the raw {@code id}.
  */
 function App() {
   const [models, setModels] = useState([]);
@@ -152,7 +152,7 @@ function App() {
   return h(
     "div",
     { className: "app" },
-    h("h1", null, "Chat"),
+    h("h1", null, "Boyan's AI Chat"),
     h(
       "label",
       { className: "field" },
